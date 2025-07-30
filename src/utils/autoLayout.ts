@@ -1,5 +1,4 @@
 import type { Node, Edge } from '@xyflow/react';
-import { EdgeRoutingManager, optimizeAllEdges } from './edgeRouting';
 
 export const autoLayout = (nodes: Node[], edges: Edge[]): Node[] => {
   const centerX = 400;
@@ -14,7 +13,7 @@ export const autoLayout = (nodes: Node[], edges: Edge[]): Node[] => {
   });
   
   // Position nodes in circular layout with hubs toward center
-  const layoutedNodes = nodes.map((node, index) => {
+  return nodes.map((node, index) => {
     const connections = connectionCounts.get(node.id) || 0;
     const angle = (index / nodes.length) * 2 * Math.PI;
     
@@ -28,33 +27,10 @@ export const autoLayout = (nodes: Node[], edges: Edge[]): Node[] => {
     
     return {
       ...node,
-      width: 120, // Set explicit dimensions for edge routing
-      height: 60,
       position: {
         x: centerX + Math.cos(angle) * radius + jitterX,
         y: centerY + Math.sin(angle) * radius + jitterY
       }
     };
   });
-  
-  return layoutedNodes;
-};
-
-/**
- * Enhanced auto-layout with edge routing optimization
- */
-export const autoLayoutWithEdgeRouting = (
-  nodes: Node[], 
-  edges: Edge[]
-): { nodes: Node[]; optimizedEdges: any[] } => {
-  // First, apply standard layout
-  const layoutedNodes = autoLayout(nodes, edges);
-  
-  // Then optimize edge routing
-  const optimizedEdges = optimizeAllEdges(layoutedNodes, edges);
-  
-  return {
-    nodes: layoutedNodes,
-    optimizedEdges
-  };
 };
