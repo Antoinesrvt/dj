@@ -1,0 +1,20 @@
+{
+  "name": "DJ Graph - Track Connection Visualizer",
+  "short_name": "DJ Graph",
+  "description": "Track and visualize your DJ mixing discoveries",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["music", "productivity", "entertainment"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23f59e0b'/%3E%3Ctext x='50' y='65' font-size='50' text-anchor='middle' fill='black'%3E🎧%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
