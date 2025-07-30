@@ -12,16 +12,39 @@ import {
 } from '@xyflow/react';
 import { useStore } from '../store/useStore';
 import { TrackNode } from './TrackNode';
-import { autoLayout } from '../utils/autoLayout';
+import { autoLayoutWithEdgeRouting } from '../utils/autoLayout';
+import { EdgeRoutingManager } from '../utils/edgeRouting';
+import { OptimizedEdgeComponent } from './OptimizedEdge';
 
 const nodeTypes = {
   track: TrackNode,
+};
+
+const edgeTypes = {
+  optimized: OptimizedEdgeComponent,
 };
 
 export const GraphCanvas = () => {
   const { tracks, connections } = useStore();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  
+  // Edge routing manager for performance optimization
+  const edgeRoutingManager = useMemo(
+    () => new EdgeRoutingManager((optimizedEdges) => {
+      // Update edges with optimized routing
+      setEdges(optimizedEdges.map(edge => ({
+        ...edge,
+        type: 'optimized',
+        data: {
+          sourceAttachment: edge.sourceAttachment,
+          targetAttachment: edge.targetAttachment,
+          pathLength: edge.pathLength,
+        },
+      })));
+    }),
+    [setEdges]
+  );
 
   // Update graph when data changes
   useEffect(() => {
@@ -37,6 +60,8 @@ export const GraphCanvas = () => {
       id: track.id,
       type: 'track',
       position: { x: 0, y: 0 },
+      width: 120,
+      height: 60,
       data: {
         ...track,
         connectionCount: connectionCounts.get(track.id) || 0,
@@ -51,7 +76,7 @@ export const GraphCanvas = () => {
         id: conn.id,
         source: conn.trackA,
         target: conn.trackB,
-        type: conn.type === 'mashup' ? 'default' : 'smoothstep',
+        type: 'optimized',
         animated: isRecent,
         style: {
           stroke: conn.type === 'mashup' ? '#8b5cf6' : '#10b981',
@@ -65,11 +90,32 @@ export const GraphCanvas = () => {
       };
     });
 
-    // Apply auto-layout
-    const layoutedNodes = autoLayout(newNodes, newEdges);
+    // Apply auto-layout with edge routing optimization
+    const { nodes: layoutedNodes, optimizedEdges } = autoLayoutWithEdgeRouting(newNodes, newEdges);
+    
     setNodes(layoutedNodes);
-    setEdges(newEdges);
+    setEdges(optimizedEdges.map(edge => ({
+      ...edge,
+      type: 'optimized',
+      data: {
+        sourceAttachment: edge.sourceAttachment,
+        targetAttachment: edge.targetAttachment,
+        pathLength: edge.pathLength,
+      },
+    })));
   }, [tracks, connections, setNodes, setEdges]);
+  
+  // Update edge routing when nodes move
+  useEffect(() => {
+    edgeRoutingManager.updateNodePositions(nodes);
+  }, [nodes, edgeRoutingManager]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      edgeRoutingManager.destroy();
+    };
+  }, [edgeRoutingManager]);
 
   const isEmpty = nodes.length === 0;
 
@@ -81,6 +127,7 @@ export const GraphCanvas = () => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
         fitView
         fitViewOptions={{ padding: 0.2 }}
